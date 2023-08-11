@@ -4,6 +4,8 @@
 #include <Firebase.h>
 #include "loadCell.h"
 #include "distanceSensor.h"
+#include "dcMotor.h"
+#include "buzzer_button.h"
 
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
