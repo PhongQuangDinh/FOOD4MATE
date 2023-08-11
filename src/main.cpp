@@ -1,6 +1,9 @@
 #include <WiFi.h>
 #include <NTPClient.h>
 #include "PubSubClient.h"
+#include <Firebase.h>
+#include "loadCell.h"
+#include "distanceSensor.h"
 
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
