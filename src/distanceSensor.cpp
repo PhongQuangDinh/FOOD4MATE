@@ -16,13 +16,6 @@ long getDistance()
 }
 void setup_distanceSensor()
 {
-  Serial.begin(9600);
   pinMode(trig_pin, OUTPUT);
   pinMode(echo_pin, INPUT);
-}
-
-void loopDistanceSensor()
-{
-  int distanceCm = getDistance();
-   Serial.println(distanceCm);
 }

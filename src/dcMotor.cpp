@@ -66,5 +66,4 @@ void loopDCMotor() {
   turnOnLed();
   
   delay(5000); // Đợi 5 giây trước khi mở khay thức ăn lại
-
 }
