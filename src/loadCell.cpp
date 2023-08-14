@@ -1,36 +1,52 @@
 #include "loadCell.h"
 // HX711 circuit wiring
-const int LOADCELL_DOUT_PIN = 16;
-const int LOADCELL_SCK_PIN = 4;
-const float plate_weight = 1.73;
+const int DOUT_PIN = 16;
+const int SCK_PIN = 4;
+const float CalibrationFactor = 0.46f; // 2280.f
+const float plateWeight = 500.f; // 0.5 kg
+float curWeight = 0;
 
 HX711 scale;
-
-void setup_loadCell() {
-  Serial.begin(115200);
-  //rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
-  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+void setup_loadCellCalibration() 
+{
+  scale.begin(DOUT_PIN, SCK_PIN);
 }
 
-void loop_loadCell() {
-
-  if (scale.is_ready()) 
-  {
-    scale.set_scale(plate_weight);    // minus the weight that we already know
-    Serial.println("Tare... remove any weights from the scale.");
-    delay(5000);
-    scale.tare();
-    Serial.println("Tare done...");
-    Serial.print("Place a known weight on the scale...");
-    delay(5000);
-    long reading = scale.get_units(10);
-    Serial.print("Result: ");
-    Serial.println(reading);
-  } 
-  else {
-    Serial.println("HX711 not found.");
-  }
+void loop_loadCellCalibration() 
+{
+  scale.set_scale();    
+  Serial.println("Reset scale to 0... remove any weights from scale.");
+  delay(5000);
+  scale.tare();
+  Serial.println("Successfully reset scale");
+  Serial.print("Place the plate on the scale...");
+  delay(5000);
+  long reading = scale.get_units(10);
+  Serial.print("Result: ");
+  Serial.println(reading);
+  Serial.println("Actual calibration would be: "); 
+  Serial.println(reading / plateWeight);
   delay(1000);
 }
+void setup_loadCell() 
+{
+  Serial.println("Initializing the scale");
+  scale.begin(DOUT_PIN, SCK_PIN);
 
-//calibration factor will be the (reading)/(known weight)
+  Serial.println("Average of 5 readings testing before setting scale ");
+  Serial.println(scale.get_units(5), 1);         
+  scale.set_scale(CalibrationFactor); //calibration factor will be the (reading)/(known weight)
+  scale.tare(); // reset the scale to 0
+
+  Serial.println("Average of 5 readings after setting up the scale ");
+  Serial.println(scale.get_units(5), 1);
+  Serial.println("Now reading for real...");
+}
+float getCurWeight() {return curWeight;}
+void loop_loadCell() 
+{
+  curWeight = scale.get_units(10);
+  scale.power_down(); // put the ADC in sleep mode
+  delay(100);
+  scale.power_up();
+}

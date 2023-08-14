@@ -56,7 +56,6 @@ void turnOnLed()
 void loopDCMotor() {
   // Gọi hàm mở khay thức ăn
   openFoodTray();
-	
   turnOnLed();
   
   delay(5000); // Đợi 5 giây trước khi đóng khay thức ăn

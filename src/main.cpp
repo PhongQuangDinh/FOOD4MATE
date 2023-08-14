@@ -15,6 +15,10 @@ const int port = 1883;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+// udp bruh
+WiFiUDP ntpUD;
+NTPClient timeClient(ntpUD);
+
 void wifiConnect()
 {
   WiFi.begin(ssid, password);
@@ -75,9 +79,14 @@ void callback(char* topic, byte* message, unsigned int length)
 //   Serial.println();
 // }
 
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
   Serial.begin(115200);
+  // hardwares first
+  //setup_loadCellCalibration();
+  setup_loadCell();
+
   Serial.println(("Connecting to Wifi:"));
   wifiConnect();
   Serial.println("IP address: ");
@@ -87,13 +96,16 @@ void setup() {
   client.setServer(mqttServer, port);
   client.setCallback(callback);
   // sendRequest();
+  timeClient.begin();
+  timeClient.setTimeOffset(7*3600);
 }
 
 void loop() 
 {
-  if(!client.connected()){
-    mqttReconnect();
-  }
+  timeClient.update();
+  //Serial.println(timeClient.getFormattedTime());
+
+  if(!client.connected()) mqttReconnect();
   client.loop();
   // create content to be publish
   int temp = random(0, 100);
@@ -105,8 +117,13 @@ void loop()
 
   //client.publish("21127668/temp", buffer); //publish random numbers
   const char* somekindofmsg = "";
-  if (temp > 50) somekindofmsg = "Hi bro what are u doing";
-  else somekindofmsg = "Its fine bro I got ya";
-  client.publish("21127668/temp",somekindofmsg);
+  if (temp > 50) somekindofmsg = "Mở vài cái topic đi bạn eii";
+  else somekindofmsg = "SIUUUUU !!!";
+  client.publish("textTopic", timeClient.getFormattedTime().c_str());
   delay(5000);
+
+  // hardwares
+  // loop_loadCellCalibration();
+  loop_loadCell();
+  Serial.println(getCurWeight(), 1);
 }

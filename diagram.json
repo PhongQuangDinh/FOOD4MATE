@@ -2,7 +2,26 @@
     "version": 1,
     "author": "Đinh Phong",
     "editor": "wokwi",
-    "parts": [ { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} } ],
-    "connections": [ [ "esp:TX0", "$serialMonitor:RX", "", [] ], [ "esp:RX0", "$serialMonitor:TX", "", [] ] ],
+    "parts": [
+      { "type": "wokwi-breadboard-half", "id": "bb1", "top": -195, "left": -45.2, "attrs": {} },
+      { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": -181.89, "left": -161.24, "attrs": {} },
+      {
+        "type": "wokwi-hx711",
+        "id": "cell1",
+        "top": -141.4,
+        "left": 357.8,
+        "attrs": { "type": "5kg" }
+      }
+    ],
+    "connections": [
+      [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+      [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+      [ "cell1:VCC", "bb1:bp.25", "red", [ "v77.8", "h-74.43", "v-0.1" ] ],
+      [ "esp:3V3", "bb1:bp.1", "red", [ "v0" ] ],
+      [ "cell1:GND", "bb1:bn.25", "black", [ "h-72.34", "v116.2" ] ],
+      [ "esp:GND.1", "bb1:bn.1", "black", [ "h9.48", "v34.05", "h39.26" ] ],
+      [ "cell1:SCK", "esp:D4", "blue", [ "h-48.16", "v9.09", "h-359.81", "v24.22" ] ],
+      [ "cell1:DT", "esp:RX2", "green", [ "h-62.98", "v9.33", "h-346.21", "v24.68" ] ]
+    ],
     "dependencies": {}
-}
+  }
