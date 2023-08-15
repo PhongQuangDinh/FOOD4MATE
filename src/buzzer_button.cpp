@@ -40,4 +40,3 @@ void buzzer_button_loop()
   }
   delay(500); //short delay to make sure button functions properly
 }
-
