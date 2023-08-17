@@ -13,6 +13,8 @@ const char* password = "";
 const char* mqttServer = "test.mosquitto.org";
 const int port = 1883;
 
+bool isSound = false;
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -43,6 +45,7 @@ void mqttReconnect()
     {
       Serial.println("connected");
       client.subscribe("Open/Close Tray");
+      client.subscribe("Create Instant Meal");
       client.subscribe("Time choice");
       client.subscribe("Set Feeding Time Interval");
       client.subscribe("Food Type");
@@ -70,10 +73,13 @@ void ExecuteUIorder(char* topic, String stMessage)
 {
   if (StringEqual(topic, "Open/Close Tray"))
   {
-    // int value = stMessage.toInt() + 999999;
-    // Serial.println(value);
-    if (stMessage == "true")
-      client.publish("Open/Close Tray", "I got the order Now open the Tray!!!");
+    isOpenTray = (isOpenTray) ? false : true;
+  }
+  if (StringEqual(topic, "Create Instant Meal"))
+  {
+    isOpenFunnel = (isOpenFunnel) ? false : true;
+    
+    isSound = (isSound) ? false : true;
   }
 }
 // print out shit that u received
@@ -169,7 +175,13 @@ void loop()
   //   }
   // }
 
-  client.publish("Food Left In Tray", buffer1);
-  client.publish("Food Left In Container", buffer2);
-  delay(500);
+  // client.publish("Food Left In Tray", buffer1);
+  // client.publish("Food Left In Container", buffer2);
+  // delay(500);
+
+  loopDCMotor();
+  if (isSound) 
+    playSound();
+  openFunnel();
+  // playSound();
 }

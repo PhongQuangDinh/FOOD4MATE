@@ -11,7 +11,7 @@ void playSound() //function used to play the sound via buzzer
   tone(buzzerPin, low_frequency, 500);
 }
 
-void buzzer_setup()
+void setup_buzzer()
 {
   pinMode(buzzerPin, OUTPUT);
 }

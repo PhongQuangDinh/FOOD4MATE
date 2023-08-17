@@ -7,6 +7,13 @@ const int motorPin4 = 2;
 const int funnelPin1 = 18;
 const int funnelPin2 = 12;
 
+bool isOpenTray = false;
+bool isOpenFunnel = false;
+int openFunnelTimer = 10;
+int openTrayTimer = 12;
+int FunnelCounter = openFunnelTimer;
+int TrayCounter = openTrayTimer;
+
 void setupDCMotor() 
 {
   pinMode(motorPin1, OUTPUT);
@@ -25,11 +32,6 @@ void setupDCMotor()
   digitalWrite(funnelPin1, LOW);
   digitalWrite(funnelPin2, LOW); 
 }
-
-void setup()
-{
-  setupDCMotor();
-}
 void openFoodTray()
 {
   // Chiều quay động cơ để mở khay
@@ -38,7 +40,7 @@ void openFoodTray()
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, HIGH);
 
-  delay(100);
+  delay(1000);
 }
 
 void closeFoodTray()
@@ -49,7 +51,7 @@ void closeFoodTray()
   digitalWrite(motorPin3, HIGH);
   digitalWrite(motorPin4, LOW);
 
-  delay(100);
+  delay(1000);
 }
 
 // Hàm mở phễu
@@ -59,7 +61,7 @@ void openFunnel()
   digitalWrite(funnelPin1, HIGH);
   digitalWrite(funnelPin2, LOW);
 
-  delay(100);
+  delay(1000);
 }
 
 // Hàm đóng phễu
@@ -69,7 +71,7 @@ void closeFunnel()
   digitalWrite(funnelPin1, LOW);
   digitalWrite(funnelPin2, HIGH);
 
-  delay(100);
+  delay(1000);
 }
 
 //Hàm tắt động cơ phễu
@@ -86,33 +88,34 @@ void shutDownFoodTray()
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, LOW);
 }
-bool isOpen = false;
-int openFunnelTimer = 10;
-int openTrayTimer = 12;
-int counter = 0;
-void loop()
+void loopDCMotor()
 {
-  int btnState = true;
-  if (btnState == HIGH)
+  // Funnel looping
+  if (isOpenFunnel == true && FunnelCounter > 0) // give signal but still not fully open
   {
-    isOpen = (isOpen) ? false : true;
-  }
-  
-  if (isOpen == true && counter > 0) // give signal but still not fully open
-  {
-    //openFoodTray();
+    //Serial.println("Open funnel ...");
     openFunnel();
-    counter -=1;
+    FunnelCounter -= 1;
   }
-  else if (isOpen == false && counter < openFunnelTimer)
+  else if (isOpenFunnel == false && FunnelCounter < openFunnelTimer)
   {
-    //closeFoodTray();
     closeFunnel();
-    counter += 1;
+    FunnelCounter += 1;
   }
   else
-  {
-    //shutDownFoodTray();
     shutDownFunnel();
+
+  // Tray looping
+  if (isOpenTray == true && TrayCounter > 0) // give signal but still not fully open
+  {
+    openFoodTray();
+    TrayCounter -= 1;
   }
+  else if (isOpenTray == false && TrayCounter < openFunnelTimer)
+  {
+    closeFoodTray();
+    TrayCounter += 1;
+  }
+  else
+    shutDownFoodTray();
 }
