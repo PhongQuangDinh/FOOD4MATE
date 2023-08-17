@@ -21,6 +21,7 @@ int Away_from_food_timer = 3000; //900000; // around 15 mins if pet away from ea
 int away_from_food_counter = Away_from_food_timer;
 int DroppingTimer = 10;
 int DroppingCounter = DroppingTimer;
+int EatTime[7];
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -54,8 +55,8 @@ void mqttReconnect()
       client.subscribe("Open/Close Tray");
       client.subscribe("Create Instant Meal");
       client.subscribe("Time choice");
-      client.subscribe("Set Feeding Time Interval");
       client.subscribe("Food Type");
+      client.subscribe("Cleaning The Machine");
     }
     else
     {
@@ -85,6 +86,42 @@ void ExecuteUIorder(char* topic, String stMessage)
   if (StringEqual(topic, "Create Instant Meal"))
   {
     onFeedTime = true;
+    // client.publish("",);
+  }
+  if (StringEqual(topic, "Time choice"))
+  {
+    // char *buf = new char[6];
+    // stMessage.toCharArray(buf, 6);
+    // for (int i = 0; i < 6; i++)
+    //   EatTime[i] = (int)buf[i];
+    // for (int i = 0; i < 6; i++)
+    //   Serial.println(EatTime[i]);
+    stMessage.remove(0, 1);
+    stMessage.remove(stMessage.length() - 1);
+
+    int index = 0; // Index to track the current integer being processed
+
+    // Split the string at each comma and convert substrings to integers
+    while (stMessage.length() > 0) 
+    {
+      int commaIndex = stMessage.indexOf(',');
+      if (commaIndex != -1) 
+      {
+        String intValueStr = stMessage.substring(0, commaIndex);
+        EatTime[index] = intValueStr.toInt();
+        stMessage.remove(0, commaIndex + 1);
+      } 
+      else 
+      {
+        EatTime[index] = stMessage.toInt();
+        stMessage = ""; // Clear the string
+      }
+      index++;
+    }
+
+    // Print the integers
+    // for (int i = 0; i < 6; i++)
+    //   Serial.println(EatTime[i]);
   }
 }
 // print out shit that u received
@@ -133,11 +170,16 @@ void setup()
   timeClient.begin();
   timeClient.setTimeOffset(7*3600);
 }
-
+void getFeedingTime()
+{
+  for (int i = 0; i < 6; i++)
+    if (timeClient.getHours() == EatTime[i])
+      onFeedTime = true;
+}
 void loop() 
 {
   timeClient.update();
-  // Serial.println(timeClient.getFormattedTime());
+  getFeedingTime();
 
   if(!client.connected()) mqttReconnect();
   client.loop();
