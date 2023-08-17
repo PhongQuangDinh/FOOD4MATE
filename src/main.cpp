@@ -17,11 +17,13 @@ bool onFeedTime = false;
 bool Food_is_out = false;
 bool Food_is_prepared = false;
 bool CallOnce = true;
-int Away_from_food_timer = 3000; //900000; // around 15 mins if pet away from eating food
+int Away_from_food_timer = 1000; //900000; // around 15 mins if pet away from eating food
 int away_from_food_counter = Away_from_food_timer;
 int DroppingTimer = 10;
 int DroppingCounter = DroppingTimer;
-int EatTime[7];
+int EatTime[6] = {255,255,255,255,255,255};
+
+float currentContainerWeight;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -57,11 +59,12 @@ void mqttReconnect()
       client.subscribe("Time choice");
       client.subscribe("Food Type");
       client.subscribe("Cleaning The Machine");
+      client.subscribe("Get Container Weight");
     }
     else
     {
       Serial.println(" try again in 5 seconds");
-      delay(5000);
+      // delay(5000);
     }
   }
 }
@@ -90,17 +93,9 @@ void ExecuteUIorder(char* topic, String stMessage)
   }
   if (StringEqual(topic, "Time choice"))
   {
-    // char *buf = new char[6];
-    // stMessage.toCharArray(buf, 6);
-    // for (int i = 0; i < 6; i++)
-    //   EatTime[i] = (int)buf[i];
-    // for (int i = 0; i < 6; i++)
-    //   Serial.println(EatTime[i]);
     stMessage.remove(0, 1);
     stMessage.remove(stMessage.length() - 1);
-
-    int index = 0; // Index to track the current integer being processed
-
+    int index = 0;
     // Split the string at each comma and convert substrings to integers
     while (stMessage.length() > 0) 
     {
@@ -118,21 +113,29 @@ void ExecuteUIorder(char* topic, String stMessage)
       }
       index++;
     }
-
-    // Print the integers
-    // for (int i = 0; i < 6; i++)
-    //   Serial.println(EatTime[i]);
+  }
+  if (StringEqual(topic, "Cleaning The Machine"))
+  {
+    if (stMessage == "true")
+      Serial.println("Cleaning the machine ......");
+    else
+      Serial.println("Stop cleaning the machine ......");
+  }
+  if (StringEqual(topic, "Get Container Weight"))
+  {
+    currentContainerWeight = stMessage.toFloat();
+    Serial.println(currentContainerWeight);
   }
 }
-// print out shit that u received
+
 void callback(char* topic, byte* message, unsigned int length)
 {
-  Serial.print(topic);
-  Serial.print(": ");
+  Serial.println(topic);
+  // Serial.print(": ");
   String stMessage;
   for (int i = 0; i < length; i++)
     stMessage += (char)message[i];
-  Serial.println(stMessage);
+  // Serial.println(stMessage); // print the value
 
   ExecuteUIorder(topic ,stMessage);
 }
@@ -180,6 +183,7 @@ void loop()
 {
   timeClient.update();
   getFeedingTime();
+
 
   if(!client.connected()) mqttReconnect();
   client.loop();
@@ -241,9 +245,10 @@ void loop()
           DroppingCounter = DroppingTimer;
 
           // update food left in tray, this thing cause slow
-          // char buffer[50];
-          // sprintf(buffer,"%d", getCurWeight());
-          // client.publish("Food Left In Tray",buffer);
+          Serial.println((float)(currentContainerWeight - 100.f));
+          char buffer[50];
+          sprintf(buffer,"%f", (float)(currentContainerWeight - 100.f)); // currentContainerWeight - getCurWeight()
+          client.publish("Food Left In Container",buffer);
 
           Food_is_prepared = true;
           isOpenFunnel = false;
@@ -274,6 +279,9 @@ void loop()
         else 
         {
           Serial.println("Meal is finished. Upload remain food in tray. Close tray");
+          char buffer[50];
+          sprintf(buffer,"%d", 37); // getCurWeight()
+          client.publish("Food Left In Tray",buffer);
 
           onFeedTime = false;
           isOpenTray = false;
@@ -282,6 +290,7 @@ void loop()
       }
       else
       {
+        stopSound();
         Serial.println("Pet is eating ...");
         // do nothing to serve the pet
         if (CallOnce) CallOnce = false;

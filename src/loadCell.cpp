@@ -33,21 +33,21 @@ void setup_loadCell()
   Serial.println("Initializing the scale");
   scale.begin(DOUT_PIN, SCK_PIN);
 
-  Serial.println("Average of 5 readings testing before setting scale ");
-  Serial.println(scale.get_units(5), 1);         
+  // Serial.println("Average of 5 readings testing before setting scale ");
+  // Serial.println(scale.get_units(5), 1);         
   scale.set_scale(CalibrationFactor); //calibration factor will be the (reading)/(known weight)
   scale.tare(); // reset the scale to 0
 
-  Serial.println("Average of 5 readings after setting up the scale ");
-  Serial.println(scale.get_units(5), 1);
-  Serial.println("Now reading for real...");
+  // Serial.println("Average of 5 readings after setting up the scale ");
+  // Serial.println(scale.get_units(5), 1);
+  // Serial.println("Now reading for real...");
 }
 float getCurWeight() 
 {
+  scale.power_up();
   curWeight = scale.get_units(10);
   scale.power_down();
-  delay(100);
-  scale.power_up();
+  // delay(100);
   return curWeight;
 }
 void loop_loadCell()
