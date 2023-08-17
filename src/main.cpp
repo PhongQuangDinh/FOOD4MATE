@@ -13,7 +13,9 @@ const char* password = "";
 const char* mqttServer = "test.mosquitto.org";
 const int port = 1883;
 
-bool isSound = false;
+bool onFeedTime = false;
+bool Food_is_out = false;
+int DroppingTimer = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -78,8 +80,6 @@ void ExecuteUIorder(char* topic, String stMessage)
   if (StringEqual(topic, "Create Instant Meal"))
   {
     isOpenFunnel = (isOpenFunnel) ? false : true;
-    
-    isSound = (isSound) ? false : true;
   }
 }
 // print out shit that u received
@@ -100,10 +100,11 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
   // hardwares first
-  // //setup_loadCellCalibration();
-  // setup_loadCell();
+  //setup_loadCellCalibration();
+  setup_loadCell();
   setup_distanceSensor();
   setup_buzzer();
+  setupDCMotor();
 
   Serial.println(("Connecting to Wifi:"));
   wifiConnect();
@@ -136,28 +137,14 @@ void loop()
   if(!client.connected()) mqttReconnect();
   client.loop();
   // // create content to be publish
-  int temp = random(50, 1000);
-  char buffer1[50], buffer2[50];
-  sprintf(buffer1, "%d", random(0, 100));
-  sprintf(buffer2, "%d", random(0, 3000));
-  // // you could create json content for database
-  // //int humidity = // use your fucking sensor here
-  // //sprintf(buffer,"{\"temperature\":%d,\"humidity\":%d}",temp,humidity);
+  // int temp = random(50, 1000);
+  // char buffer1[50], buffer2[50];
+  // sprintf(buffer1, "%d", random(0, 100));
+  // sprintf(buffer2, "%d", random(0, 3000));
 
-  // //client.publish("21127668/temp", buffer); //publish random numbers
-  // const char* somekindofmsg = "";
-  // if (temp > 50) somekindofmsg = "Mở vài cái topic đi bạn eii";
-  // else somekindofmsg = "SIUUUUU !!!";
-  // client.publish("textTopic", timeClient.getFormattedTime().c_str());
-  // delay(5000);
-
-  // // hardwares
-  // // loop_loadCellCalibration();
-  // loop_loadCell();
-  // Serial.println(getCurWeight(), 1);
-
-
-  //client.publish("Open/Close Tray", buffer);
+  // you could create json content for database
+  //int humidity = // use your fucking sensor here
+  //sprintf(buffer,"{\"temperature\":%d,\"humidity\":%d}",temp,humidity);
 
   // write data to Firebase
   // for (int i=0; i < 10; i++)
@@ -177,11 +164,24 @@ void loop()
 
   // client.publish("Food Left In Tray", buffer1);
   // client.publish("Food Left In Container", buffer2);
-  // delay(500);
+
+  // loop_loadCellCalibration();
+  loop_loadCell();
+  // Serial.println(getCurWeight(), 1);
 
   loopDCMotor();
-  if (isSound) 
-    playSound();
-  openFunnel();
-  // playSound();
+
+  if (onFeedTime)
+  {
+    if (!Food_is_out)
+    {
+      isOpenTray = true;
+      Food_is_out = true;
+    }
+    while (getDistance() > 50) // ensure that pet within reasonable area
+    {
+      playSound();
+    }
+  }
+  
 }

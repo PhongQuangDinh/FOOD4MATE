@@ -47,6 +47,6 @@ void loop_loadCell()
 {
   curWeight = scale.get_units(10);
   scale.power_down(); // put the ADC in sleep mode
-  delay(100);
+  // delay(100);
   scale.power_up();
 }

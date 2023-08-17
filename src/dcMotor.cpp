@@ -40,7 +40,7 @@ void openFoodTray()
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, HIGH);
 
-  delay(1000);
+  delay(100);
 }
 
 void closeFoodTray()
@@ -51,7 +51,7 @@ void closeFoodTray()
   digitalWrite(motorPin3, HIGH);
   digitalWrite(motorPin4, LOW);
 
-  delay(1000);
+  delay(100);
 }
 
 // Hàm mở phễu
@@ -61,7 +61,7 @@ void openFunnel()
   digitalWrite(funnelPin1, HIGH);
   digitalWrite(funnelPin2, LOW);
 
-  delay(1000);
+  delay(100);
 }
 
 // Hàm đóng phễu
@@ -71,7 +71,7 @@ void closeFunnel()
   digitalWrite(funnelPin1, LOW);
   digitalWrite(funnelPin2, HIGH);
 
-  delay(1000);
+  delay(100);
 }
 
 //Hàm tắt động cơ phễu
@@ -93,7 +93,6 @@ void loopDCMotor()
   // Funnel looping
   if (isOpenFunnel == true && FunnelCounter > 0) // give signal but still not fully open
   {
-    //Serial.println("Open funnel ...");
     openFunnel();
     FunnelCounter -= 1;
   }
