@@ -1,4 +1,4 @@
 #include <Arduino.h>
 void playSound();
-void buzzer_button_setup();
-void buzzer_button_loop();
+void setup_buzzer();
+// void buzzer_button_loop();

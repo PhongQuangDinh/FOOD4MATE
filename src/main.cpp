@@ -96,7 +96,8 @@ void setup()
   // hardwares first
   // //setup_loadCellCalibration();
   // setup_loadCell();
-  // buzzer_button_setup();
+  setup_distanceSensor();
+  setup_buzzer();
 
   Serial.println(("Connecting to Wifi:"));
   wifiConnect();
@@ -132,7 +133,7 @@ void loop()
   int temp = random(50, 1000);
   char buffer1[50], buffer2[50];
   sprintf(buffer1, "%d", random(0, 100));
-  sprintf(buffer2, "%d", random(0, 1000));
+  sprintf(buffer2, "%d", random(0, 3000));
   // // you could create json content for database
   // //int humidity = // use your fucking sensor here
   // //sprintf(buffer,"{\"temperature\":%d,\"humidity\":%d}",temp,humidity);

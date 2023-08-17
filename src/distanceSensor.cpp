@@ -1,7 +1,7 @@
 #include "distanceSensor.h"
 
-int trig_pin = 2;
-int echo_pin = 3;
+int trig_pin = 19;
+int echo_pin = 21;
 long getDistance()
 {
   digitalWrite(trig_pin, LOW);

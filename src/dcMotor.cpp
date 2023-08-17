@@ -1,28 +1,35 @@
-// C++ code
-//
-
 #include "dcMotor.h"
 
-// Hàm khởi tạo cấu hình ban đầu
-void setupDCMotor()
+const int motorPin1 = 15;
+const int motorPin2 = 5;
+const int motorPin3 = 22;
+const int motorPin4 = 2;
+const int funnelPin1 = 18;
+const int funnelPin2 = 12;
+
+void setupDCMotor() 
 {
-  // Khai báo các chân của 2 Motor đóng mở khay là OUTPUT
   pinMode(motorPin1, OUTPUT);
   pinMode(motorPin2, OUTPUT);
   pinMode(motorPin3, OUTPUT);
   pinMode(motorPin4, OUTPUT);
 
-  // Khai báo chân đèn tín hiệu
-  pinMode(2, OUTPUT);
+  pinMode(funnelPin1, OUTPUT);
+  pinMode(funnelPin2, OUTPUT);
 
   // Tắt động cơ ban đầu
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, LOW);
+  digitalWrite(funnelPin1, LOW);
+  digitalWrite(funnelPin2, LOW); 
 }
 
-// Hàm mở khay thức ăn
+void setup()
+{
+  setupDCMotor();
+}
 void openFoodTray()
 {
   // Chiều quay động cơ để mở khay
@@ -31,17 +38,9 @@ void openFoodTray()
   digitalWrite(motorPin3, LOW);
   digitalWrite(motorPin4, HIGH);
 
-  // Cấp tín hiệu PWM để điều chỉnh tốc độ động cơ
-  delay(4000); // Dừng mở trong 4 giây
-
-  // Tắt động cơ sau khi mở khay
-  digitalWrite(motorPin1, LOW);
-  digitalWrite(motorPin2, LOW);
-  digitalWrite(motorPin3, LOW);
-  digitalWrite(motorPin4, LOW);
+  delay(100);
 }
 
-// Hàm đóng khay thức ăn
 void closeFoodTray()
 {
   // Chiều quay động cơ để đóng khay
@@ -50,14 +49,7 @@ void closeFoodTray()
   digitalWrite(motorPin3, HIGH);
   digitalWrite(motorPin4, LOW);
 
-  // Cấp tín hiệu PWM để điều chỉnh tốc độ động cơ
-  delay(4000); // Dừng đóng trong 4 giây
-
-  // Tắt động cơ sau khi đóng khay
-  digitalWrite(motorPin1, LOW);
-  digitalWrite(motorPin2, LOW);
-  digitalWrite(motorPin3, LOW);
-  digitalWrite(motorPin4, LOW);
+  delay(100);
 }
 
 // Hàm mở phễu
@@ -67,8 +59,7 @@ void openFunnel()
   digitalWrite(funnelPin1, HIGH);
   digitalWrite(funnelPin2, LOW);
 
-  // Cấp tín hiệu PWM để điều chỉnh tốc độ động cơ
-  delay(4000); // Dừng mở trong 4 giây
+  delay(100);
 }
 
 // Hàm đóng phễu
@@ -78,38 +69,50 @@ void closeFunnel()
   digitalWrite(funnelPin1, LOW);
   digitalWrite(funnelPin2, HIGH);
 
-  // Cấp tín hiệu PWM để điều chỉnh tốc độ động cơ
-  delay(4000); // Dừng đóng trong 4 giây
+  delay(100);
 }
 
-// Hàm mở đèn tín hiệu
-void turnOnLed()
+//Hàm tắt động cơ phễu
+void shutDownFunnel()
 {
-  digitalWrite(2, HIGH);
-  delay(1000);
-  digitalWrite(2, LOW);
+  digitalWrite(funnelPin1, LOW);
+  digitalWrite(funnelPin2, LOW);
 }
-// Hàm chính
-void loopDCMotor()
+
+void shutDownFoodTray()
 {
-
-  // Gọi hàm để mở phễu thức ăn
-  openFunnel();
-
-  // Gọi hàm để đóng phễu thức ăn
-  closeFunnel();
-
-  // Gọi hàm mở khay thức ăn
-  openFoodTray();
-
-  turnOnLed();
-
-  delay(5000); // Đợi 5 giây trước khi đóng khay thức ăn
-
-  // Gọi hàm đóng khay thức ăn
-  closeFoodTray();
-
-  turnOnLed();
-
-  delay(5000); // Đợi 5 giây trước khi mở khay thức ăn lại
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, LOW);
+  digitalWrite(motorPin3, LOW);
+  digitalWrite(motorPin4, LOW);
+}
+bool isOpen = false;
+int openFunnelTimer = 10;
+int openTrayTimer = 12;
+int counter = 0;
+void loop()
+{
+  int btnState = true;
+  if (btnState == HIGH)
+  {
+    isOpen = (isOpen) ? false : true;
+  }
+  
+  if (isOpen == true && counter > 0) // give signal but still not fully open
+  {
+    //openFoodTray();
+    openFunnel();
+    counter -=1;
+  }
+  else if (isOpen == false && counter < openFunnelTimer)
+  {
+    //closeFoodTray();
+    closeFunnel();
+    counter += 1;
+  }
+  else
+  {
+    //shutDownFoodTray();
+    shutDownFunnel();
+  }
 }
