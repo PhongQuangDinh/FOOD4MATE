@@ -245,7 +245,6 @@ void loop()
           DroppingCounter = DroppingTimer;
 
           // update food left in tray, this thing cause slow
-          Serial.println((float)(currentContainerWeight - 100.f));
           char buffer[50];
           sprintf(buffer,"%f", (float)(currentContainerWeight - 100.f)); // currentContainerWeight - getCurWeight()
           client.publish("Food Left In Container",buffer);
