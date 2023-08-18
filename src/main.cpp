@@ -100,9 +100,10 @@ void ExecuteUIorder(char* topic, String stMessage)
   }
   if (StringEqual(topic, "Time choice"))
   {
-    Serial.println(stMessage);
+    // Serial.println(stMessage);
     stMessage.remove(0, 1);
     stMessage.remove(stMessage.length() - 1);
+    // Serial.println(stMessage); // after remove bracket
     int index = 0;
     // Split the string at each comma and convert substrings to integers
     while (stMessage.length() > 0) 
@@ -112,34 +113,44 @@ void ExecuteUIorder(char* topic, String stMessage)
       {
         String timeValue = stMessage.substring(0, commaIndex);
         int colonIndex = timeValue.indexOf(':');
-        if (colonIndex != -1) {
-          String intValueHour = timeValue.substring(0, colonIndex);
-          String intValueMin = timeValue.substring(colonIndex + 1);
+        int colonIndex2 = timeValue.lastIndexOf(":");
+        if (colonIndex != -1) 
+        {
+          String intValueHour = timeValue.substring(1, colonIndex);
+          String intValueMin = timeValue.substring(colonIndex + 1, colonIndex2);
           FeedingHours[index] = intValueHour.toInt();
           FeedingMins[index] = intValueMin.toInt();
         }
         stMessage.remove(0, commaIndex + 1);
+        // Serial.println(stMessage); // Debug
       } 
       else 
       {
         int colonIndex = stMessage.indexOf(':');
-        if (colonIndex != -1) {
-          String intValueHour = stMessage.substring(0, colonIndex);
-          String intValueMin = stMessage.substring(colonIndex + 1);
-          FeedingHours[index] = intValueHour.toInt();
-          FeedingMins[index] = intValueMin.toInt();
+        if (colonIndex != -1) 
+        {
+          String intValueHour = stMessage.substring(1, colonIndex);
+          stMessage.remove(0, colonIndex + 1);
+          int colonIndex2 = stMessage.indexOf(':');
+          if (colonIndex2 != -1) 
+          {
+            String intValueMin = stMessage.substring(0, colonIndex2);
+            FeedingHours[index] = intValueHour.toInt();
+            FeedingMins[index] = intValueMin.toInt();
+          }
         }
         stMessage = ""; // Clear the string
       }
       index++;
     }
 
-    for (int i = 0; i < 6; i++)
-    {
-      Serial.print(FeedingHours[i]);
-      Serial.print(":");
-      Serial.println(FeedingMins[i]);
-    }
+    // for (int i = 0; i < 6; i++)
+    // {
+    //   if (FeedingHours[i] == 255) continue;
+    //   Serial.print(FeedingHours[i]);
+    //   Serial.print(":");
+    //   Serial.println(FeedingMins[i]);
+    // }
   }
   if (StringEqual(topic, "Cleaning The Machine"))
   {
@@ -157,7 +168,7 @@ void ExecuteUIorder(char* topic, String stMessage)
 
 void callback(char* topic, byte* message, unsigned int length)
 {
-  Serial.println(topic);
+  // Serial.println(topic);
   // Serial.print(": ");
   String stMessage;
   for (int i = 0; i < length; i++)
@@ -299,7 +310,7 @@ void loop()
         }
         else
         {
-          Serial.println("Dropping done. Uploading food after dropping ..");
+          Serial.println("Dropping done.Food is prepared ...");
           DroppingCounter = DroppingTimer;
 
           // update food left in tray, this thing cause slow
@@ -313,7 +324,7 @@ void loop()
           Food_is_prepared = true;
           isOpenFunnel = false;
 
-          delay(10); // not so quick
+          delay(30000); // not so quick, ensure that its over the other minute
         }
       }
       else
@@ -321,6 +332,7 @@ void loop()
         Serial.println("Opening food tray ...");
         if (!isOpenTray) isOpenTray = true;
         Food_is_out = true;
+        Serial.println("Food is out to eat");
       }
     }
     else // Food prepared and out to eat

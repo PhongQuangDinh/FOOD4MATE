@@ -7,8 +7,8 @@ const int low_frequency = 1800; //frequencies of high/low sounds
 
 void playSound() //function used to play the sound via buzzer
 {
-  tone(buzzerPin, high_frequency, 80);
-  tone(buzzerPin, low_frequency, 80);
+  tone(buzzerPin, high_frequency, 500);
+  tone(buzzerPin, low_frequency, 500);
 }
 void stopSound()
 {
