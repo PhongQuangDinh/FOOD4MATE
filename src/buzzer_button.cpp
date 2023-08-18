@@ -7,16 +7,17 @@ const int low_frequency = 1800; //frequencies of high/low sounds
 
 void playSound() //function used to play the sound via buzzer
 {
-  tone(buzzerPin, high_frequency, 500);
-  tone(buzzerPin, low_frequency, 500);
+  ledcWriteNote(0, NOTE_D, 7);
 }
 void stopSound()
 {
-  noTone(buzzerPin);
+  // noTone(buzzerPin);
+  ledcDetachPin(buzzerPin);
 }
-void setup_buzzer()
+void setup_buzzer() // call once
 {
   pinMode(buzzerPin, OUTPUT);
+  ledcAttachPin(buzzerPin, 0);
 }
 
 void buzzer_button_loop() 

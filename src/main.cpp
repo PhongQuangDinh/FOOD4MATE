@@ -29,7 +29,7 @@ bool onFeedTime = false;
 bool Food_is_out = false;
 bool Food_is_prepared = false;
 bool CallOnce = true;
-int Away_from_food_timer = 1000; //900000; // around 15 mins if pet away from eating food
+int Away_from_food_timer = 100; //900000; // around 15 mins if pet away from eating food
 int away_from_food_counter = Away_from_food_timer;
 int DroppingTimer = 100;
 int DroppingCounter = DroppingTimer;
@@ -323,8 +323,7 @@ void loop()
 
           Food_is_prepared = true;
           isOpenFunnel = false;
-
-          delay(30000); // not so quick, ensure that its over the other minute
+          delay(10);
         }
       }
       else
@@ -347,6 +346,7 @@ void loop()
         {
           Serial.println("waiting for pet to return ....");
           away_from_food_counter -= 1;
+
         }
         else 
         {
