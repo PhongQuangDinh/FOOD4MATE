@@ -1,7 +1,6 @@
 #include <WiFi.h>
 #include <NTPClient.h>
 #include "PubSubClient.h"
-#include <Firebase.h>
 
 #include "loadCell.h"
 #include "distanceSensor.h"
@@ -10,20 +9,14 @@
 
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
+
+const char* host = "maker.ifttt.com";
+const char* request_FoodContainer = "/trigger/out_of_food/with/key/dbWqciIC3LLpyxiZtdYBpB";
+const char* request_Feeding = "/trigger/reminder/with/key/dbWqciIC3LLpyxiZtdYBpB";
+const int port_http = 80;
+
 const char* mqttServer = "test.mosquitto.org";
 const int port = 1883;
-
-bool onFeedTime = false;
-bool Food_is_out = false;
-bool Food_is_prepared = false;
-bool CallOnce = true;
-int Away_from_food_timer = 1000; //900000; // around 15 mins if pet away from eating food
-int away_from_food_counter = Away_from_food_timer;
-int DroppingTimer = 10;
-int DroppingCounter = DroppingTimer;
-int EatTime[6] = {255,255,255,255,255,255};
-
-float currentContainerWeight;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -31,9 +24,22 @@ PubSubClient client(espClient);
 WiFiUDP ntpUD;
 NTPClient timeClient(ntpUD);
 
-#define FIREBASE_HOST "https://console.firebase.google.com/project/food4mate/database/food4mate-default-rtdb/data/~2F"
-#define FIREBASE_AUTH "4NACSk3E50IvJ6OgH4OSBvFmyvJoQLTaetovPTi0"
-FirebaseData fireBaseData;
+bool avoid_empty_food_at_first = true;
+bool onFeedTime = false;
+bool Food_is_out = false;
+bool Food_is_prepared = false;
+bool CallOnce = true;
+int Away_from_food_timer = 1000; //900000; // around 15 mins if pet away from eating food
+int away_from_food_counter = Away_from_food_timer;
+int DroppingTimer = 100;
+int DroppingCounter = DroppingTimer;
+
+int FeedingHours[6] = {255,255,255,255,255,255};
+int FeedingMins[6] = {255,255,255,255,255,255};
+int eat_index = 0;
+
+float currentContainerWeight;
+bool hadSentAlarmOfFood = false;
 
 void wifiConnect()
 {
@@ -80,6 +86,7 @@ bool StringEqual(const char* a, const char* b) // bruh moment :>
     }
     return (*a == '\0' && *b == '\0');
 }
+
 void ExecuteUIorder(char* topic, String stMessage)
 {
   if (StringEqual(topic, "Open/Close Tray"))
@@ -89,10 +96,11 @@ void ExecuteUIorder(char* topic, String stMessage)
   if (StringEqual(topic, "Create Instant Meal"))
   {
     onFeedTime = true;
-    // client.publish("",);
+    
   }
   if (StringEqual(topic, "Time choice"))
   {
+    Serial.println(stMessage);
     stMessage.remove(0, 1);
     stMessage.remove(stMessage.length() - 1);
     int index = 0;
@@ -102,16 +110,35 @@ void ExecuteUIorder(char* topic, String stMessage)
       int commaIndex = stMessage.indexOf(',');
       if (commaIndex != -1) 
       {
-        String intValueStr = stMessage.substring(0, commaIndex);
-        EatTime[index] = intValueStr.toInt();
+        String timeValue = stMessage.substring(0, commaIndex);
+        int colonIndex = timeValue.indexOf(':');
+        if (colonIndex != -1) {
+          String intValueHour = timeValue.substring(0, colonIndex);
+          String intValueMin = timeValue.substring(colonIndex + 1);
+          FeedingHours[index] = intValueHour.toInt();
+          FeedingMins[index] = intValueMin.toInt();
+        }
         stMessage.remove(0, commaIndex + 1);
       } 
       else 
       {
-        EatTime[index] = stMessage.toInt();
+        int colonIndex = stMessage.indexOf(':');
+        if (colonIndex != -1) {
+          String intValueHour = stMessage.substring(0, colonIndex);
+          String intValueMin = stMessage.substring(colonIndex + 1);
+          FeedingHours[index] = intValueHour.toInt();
+          FeedingMins[index] = intValueMin.toInt();
+        }
         stMessage = ""; // Clear the string
       }
       index++;
+    }
+
+    for (int i = 0; i < 6; i++)
+    {
+      Serial.print(FeedingHours[i]);
+      Serial.print(":");
+      Serial.println(FeedingMins[i]);
     }
   }
   if (StringEqual(topic, "Cleaning The Machine"))
@@ -121,10 +148,10 @@ void ExecuteUIorder(char* topic, String stMessage)
     else
       Serial.println("Stop cleaning the machine ......");
   }
-  if (StringEqual(topic, "Get Container Weight"))
+  if (StringEqual(topic, "Get Container Weight")) // received every 100ms
   {
     currentContainerWeight = stMessage.toFloat();
-    Serial.println(currentContainerWeight);
+    if (avoid_empty_food_at_first) avoid_empty_food_at_first = false;
   }
 }
 
@@ -140,12 +167,54 @@ void callback(char* topic, byte* message, unsigned int length)
   ExecuteUIorder(topic ,stMessage);
 }
 
+void sendRequest(const char* request)
+{
+  Serial.println("Connectinng to ");
+  Serial.println(host);
+  Serial.println(": ");
+  Serial.println(port_http);
+
+  WiFiClient client;
+  while (!client.connect(host, port_http))
+  {
+    Serial.println("connection fail");
+    delay(1000);
+  }
+
+  client.print("GET " + String(request) + " HTTP/1.1\r\n" + 
+                "Host: " + host + "\r\n" +
+                "Connection: close\r\n\r\n");
+  delay(500);
+
+  while(client.available())
+  {
+    String line = client.readStringUntil('\R');
+    Serial.println(line);
+  }
+  Serial.println();
+}
+
+String getFormattedDate()
+{
+  String months[12]={"01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"};
+  time_t epochTime = timeClient.getEpochTime();
+  struct tm *ptm = gmtime ((time_t *)&epochTime); 
+
+  int monthDay = ptm->tm_mday;
+  int currentMonth = ptm->tm_mon+1;
+  String currentMonthName = months[currentMonth-1];
+  int currentYear = ptm->tm_year+1900;
+  //Print complete date:
+  String currentDate = String(monthDay) + "/" + String(currentMonth) + "/" + String(currentYear);
+  return currentDate;
+}
+
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
   // hardwares first
-  // //setup_loadCellCalibration();
+  // setup_loadCellCalibration();
   // setup_loadCell();
   setup_distanceSensor();
   setup_buzzer();
@@ -159,62 +228,41 @@ void setup()
   Serial.println("Set server MQTT");
   client.setServer(mqttServer, port);
   client.setCallback(callback);
+  Serial.println("Done MQTT set up");
   // sendRequest();
-
-  // Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  // Firebase.reconnectWiFi(true);
-  // if (!Firebase.beginStream(fireBaseData, "/Nodes/led"))
-  // {
-  //   Serial.println("Could not begin stream");
-  //   Serial.println("REASON: " + fireBaseData.errorReason());
-  //   Serial.println();
-  // }
 
   timeClient.begin();
   timeClient.setTimeOffset(7*3600);
 }
+
 void getFeedingTime()
 {
-  for (int i = 0; i < 6; i++)
-    if (timeClient.getHours() == EatTime[i])
-      onFeedTime = true;
+  if (timeClient.getHours() == FeedingHours[eat_index] && 
+      timeClient.getMinutes() == FeedingMins[eat_index])
+  {
+    onFeedTime = true;
+    // publish bla bla, to the cloud ye ye
+  }
+  if (eat_index < 6) eat_index++;
+  else eat_index = 0;
 }
+void remind_the_user_aboutFeedTime()
+{
+  if (timeClient.getFormattedTime() == "08:00:00" || 
+      timeClient.getFormattedTime() == "18:00:00"||
+      timeClient.getFormattedTime() == "22:00:00")
+      sendRequest(request_Feeding);
+}
+
 void loop() 
 {
   timeClient.update();
   getFeedingTime();
-
+  remind_the_user_aboutFeedTime();
 
   if(!client.connected()) mqttReconnect();
   client.loop();
-  // // create content to be publish
-  // int temp = random(50, 1000);
-  // char buffer1[50], buffer2[50];
-  // sprintf(buffer1, "%d", random(0, 100));
-  // sprintf(buffer2, "%d", random(0, 3000));
-
-  // you could create json content for database
-  //int humidity = // use your fucking sensor here
-  //sprintf(buffer,"{\"temperature\":%d,\"humidity\":%d}",temp,humidity);
-
-  // write data to Firebase
-  // for (int i=0; i < 10; i++)
-  // {
-  //   Firebase.setInt(fireBaseData,"", i);
-  //   delay(1000);
-  // }
-
-  // read data from Firebase
-  // if (Firebase.getInt(fireBaseData,""))
-  // {
-  //   if (fireBaseData.dataType() == "int")
-  //   {
-  //     Serial.println(fireBaseData.intData());
-  //   }
-  // }
-
-  // client.publish("Food Left In Tray", buffer1);
-  // client.publish("Food Left In Container", buffer2);
+  // create content to be publish
 
   // loop_loadCellCalibration();
   // loop_loadCell();
@@ -222,6 +270,16 @@ void loop()
 
   loopDCMotor();
 
+  // Notification operation
+  if (currentContainerWeight < 300 && !hadSentAlarmOfFood && !avoid_empty_food_at_first) // lower than 300 gram and havent sent alarm
+  {
+    sendRequest(request_FoodContainer); // to Ifttt
+    hadSentAlarmOfFood = true;
+  }
+  if (hadSentAlarmOfFood && currentContainerWeight > 300) 
+    hadSentAlarmOfFood = false;
+
+  // Feeding operation
   if (onFeedTime)
   {
     if (isOpenTray) 
@@ -246,8 +304,11 @@ void loop()
 
           // update food left in tray, this thing cause slow
           char buffer[50];
-          sprintf(buffer,"%f", (float)(currentContainerWeight - 100.f)); // currentContainerWeight - getCurWeight()
+          sprintf(buffer,"%f", (float)(currentContainerWeight - 99.5)); // currentContainerWeight - getCurWeight()
           client.publish("Food Left In Container",buffer);
+
+          sprintf(buffer,"{\"date\":%s,\"time\":%s}",getFormattedDate().c_str(),timeClient.getFormattedTime().c_str());
+          client.publish("Data Logging", buffer);
 
           Food_is_prepared = true;
           isOpenFunnel = false;
@@ -277,10 +338,7 @@ void loop()
         }
         else 
         {
-          Serial.println("Meal is finished. Upload remain food in tray. Close tray");
-          char buffer[50];
-          sprintf(buffer,"%d", 37); // getCurWeight()
-          client.publish("Food Left In Tray",buffer);
+          Serial.println("Meal is finished. Close tray");
 
           onFeedTime = false;
           isOpenTray = false;
@@ -302,4 +360,8 @@ void loop()
     Food_is_prepared = false;
     CallOnce = true;
   }
+
+  char remainFood[50];
+  sprintf(remainFood,"%f", 37.5); // getCurWeight()
+  client.publish("Food Left In Tray",remainFood);
 }
