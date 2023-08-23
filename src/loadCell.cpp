@@ -2,7 +2,7 @@
 // HX711 circuit wiring
 const int DOUT_PIN = 16;
 const int SCK_PIN = 4;
-const float CalibrationFactor = 0.46f; // 2280.f
+const float CalibrationFactor = 0.42f; // 2280.f
 const float plateWeight = 500.f; // 0.5 kg
 float curWeight = 0;
 
@@ -44,16 +44,12 @@ void setup_loadCell()
 }
 float getCurWeight() 
 {
-  scale.power_up();
-  curWeight = scale.get_units(10);
-  scale.power_down();
-  // delay(100);
   return curWeight;
 }
 void loop_loadCell()
 {
-  // curWeight = scale.get_units(10);
-  // scale.power_down(); // put the ADC in sleep mode
-  // // delay(100);
-  // scale.power_up();
+  curWeight = scale.get_units(10);
+  scale.power_down(); // put the ADC in sleep mode
+  // delay(100);
+  scale.power_up();
 }

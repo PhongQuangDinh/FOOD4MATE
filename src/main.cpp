@@ -143,14 +143,6 @@ void ExecuteUIorder(char* topic, String stMessage)
       }
       index++;
     }
-
-    // for (int i = 0; i < 6; i++)
-    // {
-    //   if (FeedingHours[i] == 255) continue;
-    //   Serial.print(FeedingHours[i]);
-    //   Serial.print(":");
-    //   Serial.println(FeedingMins[i]);
-    // }
   }
   if (StringEqual(topic, "Cleaning The Machine"))
   {
@@ -222,7 +214,6 @@ String getFormattedDate()
 
 void setup()
 {
-  // put your setup code here, to run once:
   Serial.begin(115200);
   // hardwares first
   // setup_loadCellCalibration();
@@ -252,7 +243,7 @@ void getFeedingTime()
       timeClient.getMinutes() == FeedingMins[eat_index])
   {
     onFeedTime = true;
-    // publish bla bla, to the cloud ye ye
+    Serial.println("It's time to eat, " + timeClient.getFormattedTime());
   }
   if (eat_index < 6) eat_index++;
   else eat_index = 0;
@@ -273,11 +264,9 @@ void loop()
 
   if(!client.connected()) mqttReconnect();
   client.loop();
-  // create content to be publish
 
   // loop_loadCellCalibration();
   // loop_loadCell();
-  // Serial.println(getCurWeight(), 1);
 
   loopDCMotor();
 
@@ -315,7 +304,7 @@ void loop()
 
           // update food left in tray, this thing cause slow
           char buffer[50];
-          sprintf(buffer,"%f", (float)(currentContainerWeight - 99.5)); // currentContainerWeight - getCurWeight()
+          sprintf(buffer,"%f", (float)(currentContainerWeight - 30.11)); // currentContainerWeight - getCurWeight()
           client.publish("Food Left In Container",buffer);
 
           sprintf(buffer,"{\"date\":%s,\"time\":%s}",getFormattedDate().c_str(),timeClient.getFormattedTime().c_str());
@@ -374,6 +363,6 @@ void loop()
   }
 
   char remainFood[50];
-  sprintf(remainFood,"%f", 37.5); // getCurWeight()
+  sprintf(remainFood,"%f", 30.11); // getCurWeight()
   client.publish("Food Left In Tray",remainFood);
 }
